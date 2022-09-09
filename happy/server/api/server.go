@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"happy/controller"
+	"happy/middlewares"
 	"happy/service"
 	"net/http"
 )
@@ -13,7 +14,9 @@ var (
 )
 
 func Start() {
-	server := gin.Default()
+	server := gin.New()
+
+	server.Use(gin.Recovery(), middlewares.Logger())
 
 	server.GET("/boxlist", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, boxController.FindAll())
