@@ -5,7 +5,9 @@ import (
 	"happy/controller"
 	"happy/middlewares"
 	"happy/service"
+	"io"
 	"net/http"
+	"os"
 )
 
 var (
@@ -13,7 +15,16 @@ var (
 	boxController controller.SaveBoxController = controller.New(boxService)
 )
 
+func setupLogOutput() {
+	f, _ := os.Create("gin.log")
+	gin.DefaultWriter = io.MultiWriter(f, os.Stdout)
+
+}
+
 func Start() {
+
+	setupLogOutput()
+
 	server := gin.New()
 
 	server.Use(gin.Recovery(), middlewares.Logger())
