@@ -7,3 +7,11 @@
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8089
+::1 - [10 Sep 22 09:36 KST] GET /boxlist 200 759.5µs
+::1 - [10 Sep 22 09:41 KST] GET /boxlist 200 0s
+::1 - [10 Sep 22 09:42 KST] GET /boxlist 200 0s
+::1 - [10 Sep 22 09:44 KST] GET /boxlist 200 0s
+::1 - [10 Sep 22 09:45 KST] GET /boxlist 200 0s
+::1 - [10 Sep 22 09:45 KST] GET /boxlist 200 0s
+::1 - [10 Sep 22 09:46 KST] GET /boxlist 200 0s
+::1 - [10 Sep 22 09:50 KST] GET /boxlist 200 0s
