@@ -28,7 +28,7 @@ func (c controller) FindAll() []entity.SaveBox {
 func (c controller) Save(ctx *gin.Context) entity.SaveBox {
 	//TODO implement me
 	var savebox entity.SaveBox
-	ctx.BindJSON(&savebox)
+	ctx.ShouldBindJSON(&savebox)
 	c.service.Save(savebox)
 	return savebox
 }

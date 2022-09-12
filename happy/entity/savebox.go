@@ -1,9 +1,10 @@
 package entity
 
-type SaveBox struct {
-	BoxName    string `json:"box-name"`
-	CreateDate string `json:"create-date"`
-	OpenDate   string `json:"open-date"`
+import "time"
 
-	SaveDiaries []Diary `json:"save-diaries"`
+type SaveBox struct {
+	BoxName     string    `json:"box-name" binding:"required"`
+	CreateDate  time.Time `json:"create-date"`
+	OpenDate    time.Time `json:"open-date"`
+	SaveDiaries []Diary   `json:"save-diaries"`
 }
