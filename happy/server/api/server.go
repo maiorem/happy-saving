@@ -36,7 +36,13 @@ func Start() {
 	})
 
 	server.POST("/boxsave", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, boxController.Save(ctx))
+		err := boxController.Save(ctx)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			ctx.JSON(http.StatusOK, gin.H{"message": "Box Input is Valid!!"})
+		}
+
 	})
 
 	server.Run(":8089")

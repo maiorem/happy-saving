@@ -8,7 +8,7 @@ import (
 
 type SaveBoxController interface {
 	FindAll() []entity.SaveBox
-	Save(ctx *gin.Context) entity.SaveBox
+	Save(ctx *gin.Context) error
 }
 
 type controller struct {
@@ -25,10 +25,13 @@ func (c controller) FindAll() []entity.SaveBox {
 	return c.service.FindAll()
 }
 
-func (c controller) Save(ctx *gin.Context) entity.SaveBox {
+func (c controller) Save(ctx *gin.Context) error {
 	//TODO implement me
 	var savebox entity.SaveBox
-	ctx.ShouldBindJSON(&savebox)
+	err := ctx.ShouldBindJSON(&savebox)
+	if err != nil {
+		return err
+	}
 	c.service.Save(savebox)
-	return savebox
+	return nil
 }

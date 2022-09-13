@@ -5,6 +5,5 @@ import "time"
 type Diary struct {
 	Emoji      string    `json:"emoji"`
 	CreateDate time.Time `json:"createDate"`
-	Title      string    `json:"title"`
-	Content    string    `json:"content"`
+	Content    string    `json:"content" binding:"min=20, max=50"`
 }
