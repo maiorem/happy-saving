@@ -11,7 +11,7 @@ type boxService struct {
 	boxes []entity.SaveBox
 }
 
-func New() BoxService {
+func BoxNew() BoxService {
 	return &boxService{}
 }
 
