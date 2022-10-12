@@ -13,7 +13,7 @@ type userService struct {
 	users []entity.User
 }
 
-func New() UserService {
+func UserNew() UserService {
 	return &userService{}
 }
 
