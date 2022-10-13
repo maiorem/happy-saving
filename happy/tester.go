@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func main() {
+func Testmain() {
 
 	url := "http://localhost:8089/boxlist"
 	method := "GET"

@@ -1,18 +1,19 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
-	gindump "github.com/tpkeeper/gin-dump"
 	"happy/controller"
 	"happy/middlewares"
 	"happy/service"
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/gin-gonic/gin"
+	gindump "github.com/tpkeeper/gin-dump"
 )
 
 var (
-	boxService    service.BoxService           = service.New()
+	boxService    service.BoxService           = service.BoxNew()
 	boxController controller.SaveBoxController = controller.New(boxService)
 )
 
