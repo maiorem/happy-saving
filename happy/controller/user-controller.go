@@ -22,11 +22,11 @@ func UserNew(service service.UserService) SaveUserController {
 	}
 }
 
-func (c controller) UserFindAll() []entity.User {
+func (c userController) UserFindAll() []entity.User {
 	return c.service.FindAll()
 }
 
-func (c controller) UserSave(ctx *gin.Context) error {
+func (c userController) UserSave(ctx *gin.Context) error {
 	//TODO implement me
 	var user entity.User
 	err := ctx.ShouldBindJSON(&user)

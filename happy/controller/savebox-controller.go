@@ -1,9 +1,10 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
 	"happy/entity"
 	"happy/service"
+
+	"github.com/gin-gonic/gin"
 )
 
 type SaveBoxController interface {
@@ -15,7 +16,7 @@ type controller struct {
 	service service.BoxService
 }
 
-func New(service service.BoxService) SaveBoxController {
+func BoxNew(service service.BoxService) SaveBoxController {
 	return controller{
 		service: service,
 	}

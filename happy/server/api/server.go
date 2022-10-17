@@ -14,7 +14,7 @@ import (
 
 var (
 	boxService    service.BoxService           = service.BoxNew()
-	boxController controller.SaveBoxController = controller.New(boxService)
+	boxController controller.SaveBoxController = controller.BoxNew(boxService)
 )
 
 func setupLogOutput() {
