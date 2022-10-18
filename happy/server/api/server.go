@@ -13,8 +13,12 @@ import (
 )
 
 var (
-	boxService    service.BoxService           = service.BoxNew()
-	boxController controller.SaveBoxController = controller.BoxNew(boxService)
+	boxService      service.BoxService             = service.BoxNew()
+	boxController   controller.SaveBoxController   = controller.BoxNew(boxService)
+	userService     service.UserService            = service.UserNew()
+	userController  controller.SaveUserController  = controller.UserNew(userService)
+	diaryService    service.DiaryService           = service.DiaryNew()
+	diaryController controller.SaveDiaryController = controller.DiaryNew(diaryService)
 )
 
 func setupLogOutput() {
