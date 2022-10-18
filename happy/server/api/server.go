@@ -36,6 +36,10 @@ func Start() {
 	server.Use(gin.Recovery(), middlewares.Logger(),
 		middlewares.BasicAuth(), gindump.Dump())
 
+	server.GET("/", func(ctx *gin.Context) {
+
+	})
+
 	server.GET("/boxlist", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, boxController.FindAll())
 	})
