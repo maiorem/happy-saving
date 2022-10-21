@@ -36,23 +36,69 @@ func Start() {
 	server.Use(gin.Recovery(), middlewares.Logger(),
 		middlewares.BasicAuth(), gindump.Dump())
 
-	server.GET("/", func(ctx *gin.Context) {
+	server.GET("/", happymain)
 
-	})
+	server.GET("/boxlist", myboxlist)
 
-	server.GET("/boxlist", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, boxController.FindAll())
-	})
+	server.POST("/boxsave", myboxsave)
 
-	server.POST("/boxsave", func(ctx *gin.Context) {
-		err := boxController.Save(ctx)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		} else {
-			ctx.JSON(http.StatusOK, gin.H{"message": "Box Input is Valid!!"})
-		}
+	server.POST("/join", userjoin)
 
-	})
+	server.POST("/writediary", writediary)
+
+	server.GET("/diaries", mydiarylist)
+
+	server.GET("/diaries/:id", mydiaryById)
 
 	server.Run(":8089")
+}
+
+func happymain(ctx *gin.Context) {
+	// 회원 정보가 없으면
+
+	// 회원 정보가 존재하면
+	ctx.JSON(http.StatusOK, boxController.FindAll())
+}
+
+func myboxlist(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, boxController.FindAll())
+}
+
+func myboxsave(ctx *gin.Context) {
+	err := boxController.Save(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"message": "Box Input is Valid!!"})
+	}
+}
+
+func userjoin(ctx *gin.Context) {
+
+	err := userController.UserSave(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"message": "New Member join!"})
+	}
+
+}
+
+func writediary(ctx *gin.Context) {
+	err := diaryController.DiarySave(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"message": "Write Diary!"})
+	}
+
+}
+
+func mydiarylist(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, diaryController.DiaryFindAll())
+}
+
+func mydiaryById(ctx *gin.Context) {
+	// id := ctx.Param("id")
+
 }
