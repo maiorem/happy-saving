@@ -13,6 +13,9 @@ import (
 )
 
 var (
+	loginService    service.LoginService           = service.NewLoginService()
+	jwtService      service.JWTService             = service.NewJWTService()
+	loginController controller.LoginController     = controller.NewLoginController(loginService, jwtService)
 	boxService      service.BoxService             = service.BoxNew()
 	boxController   controller.SaveBoxController   = controller.BoxNew(boxService)
 	userService     service.UserService            = service.UserNew()
@@ -38,6 +41,8 @@ func Start() {
 
 	server.GET("/", happymain)
 
+	server.POST("/login", userlogin)
+
 	server.GET("/boxlist", myboxlist)
 
 	server.POST("/boxsave", myboxsave)
@@ -60,16 +65,29 @@ func happymain(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, boxController.FindAll())
 }
 
+func userlogin(ctx *gin.Context) {
+	token := loginController.Login(ctx)
+	if token != "" {
+		ctx.JSON(http.StatusOK, gin.H{
+			"token": token,
+		})
+	} else {
+		ctx.JSON(http.StatusUnauthorized, nil)
+	}
+
+}
+
 func myboxlist(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, boxController.FindAll())
 }
 
 func myboxsave(ctx *gin.Context) {
+
 	err := boxController.Save(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	} else {
-		ctx.JSON(http.StatusOK, gin.H{"message": "Box Input is Valid!!"})
+		ctx.JSON(http.StatusOK, gin.H{"message": "New Box is Valid"})
 	}
 }
 

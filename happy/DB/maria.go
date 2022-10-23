@@ -7,7 +7,7 @@ func mariadb() {
 	var variable string
 	var setTime string
 
-	db, err := sql.Open("mysql", "maiorem:pass@tcp(localhost:8089)/happysave")
+	db, err := sql.Open("mysql", "maiorem:pass@tcp(localhost:3036)/happysave")
 	if err != nil {
 		panic(err)
 	}
