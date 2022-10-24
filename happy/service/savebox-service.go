@@ -1,25 +1,42 @@
 package service
 
-import "happy/entity"
+import (
+	"happy/entity"
+	"happy/repository"
+)
 
 type BoxService interface {
-	Save(box entity.SaveBox) entity.SaveBox
+	Save(entity.SaveBox) error
+	UpdateBox(entity.SaveBox) error
+	DeleteBox(entity.SaveBox) error
 	FindAll() []entity.SaveBox
 }
 
 type boxService struct {
-	boxes []entity.SaveBox
+	repository repository.Repository
 }
 
-func BoxNew() BoxService {
-	return &boxService{}
+func BoxNew(boxRepository repository.Repository) BoxService {
+	return &boxService{
+		repository: boxRepository,
+	}
 }
 
-func (service *boxService) Save(box entity.SaveBox) entity.SaveBox {
-	service.boxes = append(service.boxes, box)
-	return box
+func (service *boxService) Save(box entity.SaveBox) error {
+	service.repository.Save(box)
+	return nil
+}
+
+func (service *boxService) UpdateBox(box entity.SaveBox) error {
+	service.repository.UpdateBox(box)
+	return nil
+}
+
+func (service *boxService) DeleteBox(box entity.SaveBox) error {
+	service.repository.DeleteBox(box)
+	return nil
 }
 
 func (service *boxService) FindAll() []entity.SaveBox {
-	return service.boxes
+	return service.repository.FindAllBox()
 }
