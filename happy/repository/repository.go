@@ -35,7 +35,7 @@ type database struct {
 }
 
 func NewRepository() Repository {
-	db, err := gorm.Open("mysql", "maiorem:123456@/happysave?charset=utf8&parseTime=True&loc=Local")
+	db, err := gorm.Open("mysql", "maiorem:123456@(localhost)/happysave?charset=utf8&parseTime=True&loc=Local")
 	if err != nil {
 		panic("Failed to connect databse")
 	}
