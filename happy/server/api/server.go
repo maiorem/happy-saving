@@ -3,23 +3,28 @@ package api
 import (
 	"happy/controller"
 	"happy/middlewares"
+	"happy/repository"
 	"happy/service"
 	"io"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	gindump "github.com/tpkeeper/gin-dump"
 )
 
 var (
-	loginService    service.LoginService           = service.NewLoginService()
-	jwtService      service.JWTService             = service.NewJWTService()
-	loginController controller.LoginController     = controller.NewLoginController(loginService, jwtService)
-	boxService      service.BoxService             = service.BoxNew()
-	boxController   controller.SaveBoxController   = controller.BoxNew(boxService)
-	userService     service.UserService            = service.UserNew()
-	userController  controller.SaveUserController  = controller.UserNew(userService)
+	happyRepository repository.Repository = repository.NewRepository()
+
+	loginService    service.LoginService       = service.NewLoginService()
+	jwtService      service.JWTService         = service.NewJWTService()
+	loginController controller.LoginController = controller.NewLoginController(loginService, jwtService)
+
+	boxService    service.BoxService           = service.BoxNew(happyRepository)
+	boxController controller.SaveBoxController = controller.BoxNew(boxService)
+
+	userService    service.UserService           = service.UserNew()
+	userController controller.SaveUserController = controller.UserNew(userService)
+
 	diaryService    service.DiaryService           = service.DiaryNew()
 	diaryController controller.SaveDiaryController = controller.DiaryNew(diaryService)
 )
@@ -32,12 +37,13 @@ func setupLogOutput() {
 
 func Start() {
 
+	defer happyRepository.CloseDB()
+
 	setupLogOutput()
 
 	server := gin.New()
 
-	server.Use(gin.Recovery(), middlewares.Logger(),
-		gindump.Dump())
+	server.Use(gin.Recovery(), middlewares.Logger())
 
 	server.GET("/", happymain)
 
