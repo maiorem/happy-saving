@@ -37,25 +37,36 @@ func Start() {
 	server := gin.New()
 
 	server.Use(gin.Recovery(), middlewares.Logger(),
-		middlewares.BasicAuth(), gindump.Dump())
+		gindump.Dump())
 
 	server.GET("/", happymain)
 
 	server.POST("/login", userlogin)
-
-	server.GET("/boxlist", myboxlist)
-
-	server.POST("/boxsave", myboxsave)
-
 	server.POST("/join", userjoin)
 
-	server.POST("/writediary", writediary)
+	// JWT Authorization Middleware applies to "/api" only.
+	apiRoutes := server.Group("/api", middlewares.AuthorizeJWT())
+	{
 
-	server.GET("/diaries", mydiarylist)
+		apiRoutes.GET("/boxlist", myboxlist)
+		apiRoutes.POST("/boxsave", myboxsave)
 
-	server.GET("/diaries/:id", mydiaryById)
+		apiRoutes.POST("/writediary", writediary)
 
-	server.Run(":8089")
+		apiRoutes.GET("/diaries", mydiarylist)
+
+		apiRoutes.GET("/diaries/:id", mydiaryById)
+	}
+
+	// We can setup this env variable from the EB console
+	port := os.Getenv("PORT")
+
+	// Elastic Beanstalk forwards requests to port 8089
+	if port == "" {
+		port = "8089"
+	}
+	server.Run(":" + port)
+
 }
 
 func happymain(ctx *gin.Context) {
@@ -77,6 +88,17 @@ func userlogin(ctx *gin.Context) {
 
 }
 
+func userjoin(ctx *gin.Context) {
+
+	err := userController.UserSave(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"message": "New Member join!"})
+	}
+
+}
+
 func myboxlist(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, boxController.FindAll())
 }
@@ -89,17 +111,6 @@ func myboxsave(ctx *gin.Context) {
 	} else {
 		ctx.JSON(http.StatusOK, gin.H{"message": "New Box is Valid"})
 	}
-}
-
-func userjoin(ctx *gin.Context) {
-
-	err := userController.UserSave(ctx)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	} else {
-		ctx.JSON(http.StatusOK, gin.H{"message": "New Member join!"})
-	}
-
 }
 
 func writediary(ctx *gin.Context) {
