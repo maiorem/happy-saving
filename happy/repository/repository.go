@@ -77,6 +77,8 @@ func (db *database) Save(savebox entity.SaveBox) {
 func (db *database) UpdateBox(savebox entity.SaveBox) {
 	db.connection.Save(&savebox)
 }
+
+// 박스 전체 (어드민)
 func (db *database) FindAllBox() []entity.SaveBox {
 	var boxes []entity.SaveBox
 	db.connection.Set("gorm:auto_preload", true).Find(&boxes)
@@ -94,6 +96,13 @@ func (db *database) ActivateBox() entity.SaveBox {
 		}
 	}
 	return viewbox
+}
+
+// activate == false 박스 중 특정 박스 하나 (findbyid)
+func (db *database) FindHistoryBoxById(id uint64) entity.SaveBox {
+	var historybox entity.SaveBox
+	db.connection.First(&historybox, id)
+	return historybox
 }
 
 func (db *database) DeleteBox(savebox entity.SaveBox) {
