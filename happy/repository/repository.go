@@ -39,7 +39,7 @@ func NewRepository() Repository {
 	if err != nil {
 		panic("Failed to connect databse")
 	}
-	db.AutoMigrate(&entity.SaveBox{}, &entity.User{}, &entity.Diary{})
+	db.AutoMigrate(&entity.SaveBox{}, &entity.User{}, &entity.Diary{}, &entity.Emoji{})
 	return &database{
 		connection: db,
 	}
@@ -81,6 +81,19 @@ func (db *database) FindAllBox() []entity.SaveBox {
 	var boxes []entity.SaveBox
 	db.connection.Set("gorm:auto_preload", true).Find(&boxes)
 	return boxes
+}
+
+// activate == true 상태인 박스 하나만 노출
+func (db *database) ActivateBox() entity.SaveBox {
+	var boxes []entity.SaveBox
+	var viewbox entity.SaveBox
+	db.connection.Set("gorm:auto_preload", true).Find(&boxes)
+	for _, box := range boxes {
+		if box.Activate {
+			viewbox = box
+		}
+	}
+	return viewbox
 }
 
 func (db *database) DeleteBox(savebox entity.SaveBox) {
