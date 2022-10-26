@@ -14,12 +14,12 @@ type Repository interface {
 	UpdateUser(user entity.User)          // 회원정보수정
 	FindAllUser() []entity.User           // 회원 리스트
 	DeleteUser(user entity.User)          // 회원탈퇴
-	FindByEmail(email string) entity.User // 회원 정보보기
+	FindByEmail(email string) entity.User // 회원 정보보기 ( = 로그인 )
 
 	// Savebox
 	Save(savebox entity.SaveBox)                 // 저금통 등록
 	UpdateBox(savebox entity.SaveBox)            // 저금통 수정
-	FindAllBox() []entity.SaveBox                // 저금통 전체 리스트
+	FindAllBox() []entity.SaveBox                // 저금통 전체 리스트 (어드민)
 	DeleteBox(savebox entity.SaveBox)            // 저금통 삭제
 	ActivateBox() entity.SaveBox                 // 활성화 상태인 저금통 (회원별로 수정)
 	HistoryAllBox() []entity.SaveBox             // 비활성화 상태인 모든 저금통 (회원별로 수정)
@@ -28,10 +28,11 @@ type Repository interface {
 	// Diary
 	Write(diary entity.Diary)       // 일기 쓰기
 	UpdateDiary(diary entity.Diary) // 일기 수정
-	FindAllDiary() []entity.Diary   // 일기 전체 리스트 (저금통 별 조회로 수정)
-	DeleteDiary(diary entity.Diary) // 일기 삭제
+	FindAllDiary() []entity.Diary   // 일기 전체 리스트 (어드민)
+	// 일기 카운트 (저금통 별 조회)
+	// 일기 전체 (저금통 별 조회)
 	// 일기 하나 열기
-	// 일기 카운트 (저금통 별)
+	DeleteDiary(diary entity.Diary) // 일기 삭제
 
 	CloseDB()
 }
