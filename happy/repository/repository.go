@@ -10,22 +10,28 @@ import (
 type Repository interface {
 
 	// User
-	Join(user entity.User)
-	UpdateUser(user entity.User)
-	FindAllUser() []entity.User
-	DeleteUser(user entity.User)
+	Join(user entity.User)                // 회원가입
+	UpdateUser(user entity.User)          // 회원정보수정
+	FindAllUser() []entity.User           // 회원 리스트
+	DeleteUser(user entity.User)          // 회원탈퇴
+	FindByEmail(email string) entity.User // 회원 정보보기
 
 	// Savebox
-	Save(savebox entity.SaveBox)
-	UpdateBox(savebox entity.SaveBox)
-	FindAllBox() []entity.SaveBox
-	DeleteBox(savebox entity.SaveBox)
+	Save(savebox entity.SaveBox)                 // 저금통 등록
+	UpdateBox(savebox entity.SaveBox)            // 저금통 수정
+	FindAllBox() []entity.SaveBox                // 저금통 전체 리스트
+	DeleteBox(savebox entity.SaveBox)            // 저금통 삭제
+	ActivateBox() entity.SaveBox                 // 활성화 상태인 저금통 (회원별로 수정)
+	HistoryAllBox() []entity.SaveBox             // 비활성화 상태인 모든 저금통 (회원별로 수정)
+	FindHistoryBoxById(id uint64) entity.SaveBox // 비활성화 상태인 저금통 중 하나
 
 	// Diary
-	Write(diary entity.Diary)
-	UpdateDiary(diary entity.Diary)
-	FindAllDiary() []entity.Diary
-	DeleteDiary(diary entity.Diary)
+	Write(diary entity.Diary)       // 일기 쓰기
+	UpdateDiary(diary entity.Diary) // 일기 수정
+	FindAllDiary() []entity.Diary   // 일기 전체 리스트 (저금통 별 조회로 수정)
+	DeleteDiary(diary entity.Diary) // 일기 삭제
+	// 일기 하나 열기
+	// 일기 카운트 (저금통 별)
 
 	CloseDB()
 }
@@ -54,27 +60,54 @@ func (db *database) CloseDB() {
 	}
 }
 
-// User
+// ========================== User
+// ///// 회원가입
 func (db *database) Join(user entity.User) {
 	db.connection.Create(&user)
 }
+
+// 이메일 중복 체크 (bool)
+func (db *database) EmailDuplicationCheck(email string) bool {
+	var user entity.User
+	result := true
+	resultquery := db.connection.Model(entity.User{Email: email}).First(&user)
+	if resultquery.RowsAffected > 0 {
+		result = false
+	}
+	return result
+}
+
+// ///// 회원정보 수정 (상세 수정 기능 포함해야함)
 func (db *database) UpdateUser(user entity.User) {
 	db.connection.Save(&user)
 }
+
+// ///// (어드민) 회원전체 리스트
 func (db *database) FindAllUser() []entity.User {
 	var members []entity.User
 	db.connection.Set("gorm:auto_preload", true).Find(&members)
 	return members
 }
 
+// ////// 내 정보 보기 ( & 로그인 )
+func (db *database) FindByEmail(email string) entity.User {
+	var user entity.User
+	db.connection.Select("email = ?", email).First(&user)
+	return user
+}
+
+// ///// 회원탈퇴
 func (db *database) DeleteUser(user entity.User) {
 	db.connection.Save(&user)
 }
 
-// Savebox
+// ======================= Savebox
+// 박스 등록
 func (db *database) Save(savebox entity.SaveBox) {
 	db.connection.Create(&savebox)
 }
+
+// 박스 수정
 func (db *database) UpdateBox(savebox entity.SaveBox) {
 	db.connection.Save(&savebox)
 }
@@ -88,40 +121,51 @@ func (db *database) FindAllBox() []entity.SaveBox {
 
 // activate == true 상태인 박스 하나만 노출
 func (db *database) ActivateBox() entity.SaveBox {
-	var boxes []entity.SaveBox
 	var viewbox entity.SaveBox
-	db.connection.Set("gorm:auto_preload", true).Find(&boxes)
-	for _, box := range boxes {
-		if box.Activate {
-			viewbox = box
-		}
-	}
+	db.connection.Where("activate = ?", true).First(&viewbox)
 	return viewbox
+}
+
+// 비활성화 박스 전체 리스트
+func (db *database) HistoryAllBox() []entity.SaveBox {
+	var boxes []entity.SaveBox
+	db.connection.Where("activate = ?", false).Find(&boxes)
+	return boxes
 }
 
 // activate == false 박스 중 특정 박스 하나 (findbyid)
 func (db *database) FindHistoryBoxById(id uint64) entity.SaveBox {
 	var historybox entity.SaveBox
-	db.connection.First(&historybox, id)
+	db.connection.Where("activate = ?", false).First(&historybox, id)
 	return historybox
 }
 
+// 박스 삭제
 func (db *database) DeleteBox(savebox entity.SaveBox) {
 	db.connection.Save(&savebox)
 }
 
-// Diary
+// ================================ Diary
+// 일기 쓰기
 func (db *database) Write(diary entity.Diary) {
 	db.connection.Create(&diary)
 }
+
+// 일기 수정
 func (db *database) UpdateDiary(diary entity.Diary) {
 	db.connection.Save(&diary)
 }
+
+// 일기장 보기 (1건)
+
+// 일기 전체 (박스별 리스트로 수정해야 함)
 func (db *database) FindAllDiary() []entity.Diary {
 	var diaries []entity.Diary
 	db.connection.Set("gorm:auto_preload", true).Find(&diaries)
 	return diaries
 }
+
+// 일기 삭제
 func (db *database) DeleteDiary(diary entity.Diary) {
 	db.connection.Save(&diary)
 }
