@@ -10,6 +10,7 @@ type BoxService interface {
 	UpdateBox(entity.SaveBox) error
 	DeleteBox(entity.SaveBox) error
 	FindAll() []entity.SaveBox
+	ActivateBox() entity.SaveBox
 }
 
 type boxService struct {
@@ -39,4 +40,8 @@ func (service *boxService) DeleteBox(box entity.SaveBox) error {
 
 func (service *boxService) FindAll() []entity.SaveBox {
 	return service.repository.FindAllBox()
+}
+
+func (service *boxService) ActivateBox() entity.SaveBox {
+	return service.repository.ActivateBox()
 }

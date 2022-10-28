@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -117,6 +118,20 @@ func myboxsave(ctx *gin.Context) {
 	} else {
 		ctx.JSON(http.StatusOK, gin.H{"message": "New Box is Valid"})
 	}
+}
+
+func activatebox(ctx *gin.Context) {
+	var viewbox = boxController.ActivateBox(ctx)
+	var currentTime = time.Now()
+
+	// 오픈 날짜가 아직 안왔으면 다이어리에서 이모지만 출력
+	if viewbox.OpenDate.After(currentTime) {
+
+		// 오픈 날짜가 당일이거나 지났으면 다이어리 전체 출력
+	} else {
+
+	}
+
 }
 
 func writediary(ctx *gin.Context) {

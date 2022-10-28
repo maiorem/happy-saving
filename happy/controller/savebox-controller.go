@@ -14,6 +14,7 @@ type SaveBoxController interface {
 	Save(ctx *gin.Context) error
 	UpdateBox(ctx *gin.Context) error
 	DeleteBox(ctx *gin.Context) error
+	ActivateBox(ctx *gin.Context) entity.SaveBox
 }
 
 type boxController struct {
@@ -31,6 +32,11 @@ func BoxNew(service service.BoxService) SaveBoxController {
 func (c *boxController) FindAll() []entity.SaveBox {
 	//TODO implement me
 	return c.service.FindAll()
+}
+
+func (c *boxController) ActivateBox(ctx *gin.Context) entity.SaveBox {
+	return c.service.ActivateBox()
+
 }
 
 func (c *boxController) Save(ctx *gin.Context) error {
