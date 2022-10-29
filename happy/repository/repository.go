@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"happy/dto"
 	"happy/entity"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -10,11 +11,11 @@ import (
 type Repository interface {
 
 	// User
-	Join(user entity.User)                // 회원가입
-	UpdateUser(user entity.User)          // 회원정보수정
-	FindAllUser() []entity.User           // 회원 리스트
-	DeleteUser(user entity.User)          // 회원탈퇴
-	FindByEmail(email string) entity.User // 회원 정보보기 ( = 로그인 )
+	Join(user dto.CreateUserRequest)       // 회원가입
+	UpdateUser(user dto.UpdateUserRequest) // 회원정보수정
+	FindAllUser() []entity.User            // 회원 리스트
+	DeleteUser(user entity.User)           // 회원탈퇴
+	FindByEmail(email string) entity.User  // 회원 정보보기 ( = 로그인 )
 
 	// Savebox
 	Save(savebox entity.SaveBox)                 // 저금통 등록
@@ -63,7 +64,7 @@ func (db *database) CloseDB() {
 
 // ========================== User
 // ///// 회원가입
-func (db *database) Join(user entity.User) {
+func (db *database) Join(user dto.CreateUserRequest) {
 	db.connection.Create(&user)
 }
 
@@ -79,7 +80,7 @@ func (db *database) EmailDuplicationCheck(email string) bool {
 }
 
 // ///// 회원정보 수정 (상세 수정 기능 포함해야함)
-func (db *database) UpdateUser(user entity.User) {
+func (db *database) UpdateUser(user dto.UpdateUserRequest) {
 	db.connection.Save(&user)
 }
 
