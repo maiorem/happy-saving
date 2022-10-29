@@ -1,7 +1,11 @@
 package dto
 
+import "time"
+
 type UpdateUserRequest struct {
-	Name     string
-	Email    string
+	BoxName  string
 	Password string
+	OpenDate time.Time
+	Activate bool
+	IsOpened bool
 }
