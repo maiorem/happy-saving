@@ -1,22 +1,22 @@
 package service
 
 type LoginService interface {
-	Login(username string, password string) bool
+	Login(useremail string, password string) bool
 }
 
 type loginService struct {
-	authorizedUsername string
-	authorizedPassword string
+	authorizedUserEmail string
+	authorizedPassword  string
 }
 
 func NewLoginService() LoginService {
 	return &loginService{
-		authorizedUsername: "maiorem",
-		authorizedPassword: "123456",
+		authorizedUserEmail: "maiorem",
+		authorizedPassword:  "123456",
 	}
 }
 
-func (service *loginService) Login(username string, password string) bool {
-	return service.authorizedUsername == username &&
+func (service *loginService) Login(useremail string, password string) bool {
+	return service.authorizedUserEmail == useremail &&
 		service.authorizedPassword == password
 }
