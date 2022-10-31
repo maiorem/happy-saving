@@ -30,9 +30,9 @@ func (controller *loginController) Login(ctx *gin.Context) string {
 	if err != nil {
 		return ""
 	}
-	isAuthenticated := controller.loginService.Login(credentials.Username, credentials.Password)
+	isAuthenticated := controller.loginService.Login(credentials.Useremail, credentials.Password)
 	if isAuthenticated {
-		return controller.jWtService.GenerateToken(credentials.Username, true)
+		return controller.jWtService.GenerateToken(credentials.Useremail, true)
 	}
 	return ""
 }

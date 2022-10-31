@@ -91,10 +91,18 @@ func (db *database) FindAllUser() []entity.User {
 	return members
 }
 
-// ////// 내 정보 보기 ( & 로그인 )
+// ////// 내 정보 보기
 func (db *database) FindByEmail(email string) entity.User {
 	var user entity.User
 	db.connection.Select("email = ?", email).First(&user)
+	return user
+}
+
+////////// 로그인
+
+func (db *database) Login(email string, password string) entity.User {
+	var user entity.User
+	db.connection.Select("email = ? and password = ?", email, password).First(&user)
 	return user
 }
 
