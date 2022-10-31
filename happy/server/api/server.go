@@ -44,7 +44,7 @@ func Start() {
 
 	server := gin.New()
 
-	server.Use(gin.Recovery(), middlewares.Logger())
+	server.Use(gin.Recovery(), middlewares.Logger(), middlewares.CORSmiddleware())
 
 	server.GET("/", happymain)
 
