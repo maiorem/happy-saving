@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"happy/dto"
 	"happy/entity"
 	"happy/service"
 	"strconv"
@@ -41,7 +42,7 @@ func (c *boxController) ActivateBox(ctx *gin.Context) entity.SaveBox {
 
 func (c *boxController) Save(ctx *gin.Context) error {
 	//TODO implement me
-	var savebox entity.SaveBox
+	var savebox dto.CreateBoxRequest
 	err := ctx.ShouldBindJSON(&savebox)
 	if err != nil {
 		return err
@@ -51,7 +52,7 @@ func (c *boxController) Save(ctx *gin.Context) error {
 }
 
 func (c *boxController) UpdateBox(ctx *gin.Context) error {
-	var box entity.SaveBox
+	var box dto.UpdateBoxRequest
 	err := ctx.ShouldBindJSON(&box)
 	if err != nil {
 		return err

@@ -1,13 +1,14 @@
 package service
 
 import (
+	"happy/dto"
 	"happy/entity"
 	"happy/repository"
 )
 
 type BoxService interface {
-	Save(entity.SaveBox) error
-	UpdateBox(entity.SaveBox) error
+	Save(dto.CreateBoxRequest) error
+	UpdateBox(dto.UpdateBoxRequest) error
 	DeleteBox(entity.SaveBox) error
 	FindAll() []entity.SaveBox
 	ActivateBox() entity.SaveBox
@@ -23,12 +24,12 @@ func BoxNew(boxRepository repository.Repository) BoxService {
 	}
 }
 
-func (service *boxService) Save(box entity.SaveBox) error {
+func (service *boxService) Save(box dto.CreateBoxRequest) error {
 	service.repository.Save(box)
 	return nil
 }
 
-func (service *boxService) UpdateBox(box entity.SaveBox) error {
+func (service *boxService) UpdateBox(box dto.UpdateBoxRequest) error {
 	service.repository.UpdateBox(box)
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 )
 
 type UpdateDiaryRequest struct {
+	ID        uint64
 	Emoji     entity.Emoji
 	UpdatedAt time.Time
 	Content   string

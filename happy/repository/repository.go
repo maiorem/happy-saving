@@ -18,8 +18,8 @@ type Repository interface {
 	FindByEmail(email string) entity.User  // 회원 정보보기 ( = 로그인 )
 
 	// Savebox
-	Save(savebox entity.SaveBox)                 // 저금통 등록
-	UpdateBox(savebox entity.SaveBox)            // 저금통 수정
+	Save(savebox dto.CreateBoxRequest)           // 저금통 등록
+	UpdateBox(savebox dto.UpdateBoxRequest)      // 저금통 수정
 	FindAllBox() []entity.SaveBox                // 저금통 전체 리스트 (어드민)
 	DeleteBox(savebox entity.SaveBox)            // 저금통 삭제
 	ActivateBox() entity.SaveBox                 // 활성화 상태인 저금통 (회원별로 수정)
@@ -27,9 +27,9 @@ type Repository interface {
 	FindHistoryBoxById(id uint64) entity.SaveBox // 비활성화 상태인 저금통 중 하나
 
 	// Diary
-	Write(diary entity.Diary)       // 일기 쓰기
-	UpdateDiary(diary entity.Diary) // 일기 수정
-	FindAllDiary() []entity.Diary   // 일기 전체 리스트 (어드민)
+	Write(diary dto.CreateDiaryRequest)       // 일기 쓰기
+	UpdateDiary(diary dto.UpdateDiaryRequest) // 일기 수정
+	FindAllDiary() []entity.Diary             // 일기 전체 리스트 (어드민)
 	// 일기 카운트 (저금통 별 조회)
 	// 일기 전체 (저금통 별 조회)
 	// 일기 하나 열기
@@ -105,12 +105,12 @@ func (db *database) DeleteUser(user entity.User) {
 
 // ======================= Savebox
 // 박스 등록
-func (db *database) Save(savebox entity.SaveBox) {
+func (db *database) Save(savebox dto.CreateBoxRequest) {
 	db.connection.Create(&savebox)
 }
 
 // 박스 수정
-func (db *database) UpdateBox(savebox entity.SaveBox) {
+func (db *database) UpdateBox(savebox dto.UpdateBoxRequest) {
 	db.connection.Save(&savebox)
 }
 
@@ -149,12 +149,12 @@ func (db *database) DeleteBox(savebox entity.SaveBox) {
 
 // ================================ Diary
 // 일기 쓰기
-func (db *database) Write(diary entity.Diary) {
+func (db *database) Write(diary dto.CreateDiaryRequest) {
 	db.connection.Create(&diary)
 }
 
 // 일기 수정
-func (db *database) UpdateDiary(diary entity.Diary) {
+func (db *database) UpdateDiary(diary dto.UpdateDiaryRequest) {
 	db.connection.Save(&diary)
 }
 
