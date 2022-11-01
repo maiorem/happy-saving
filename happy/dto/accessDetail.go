@@ -2,7 +2,7 @@ package dto
 
 type AccessDetails struct {
 	AccessUuid string
-	UserEmail  string
+	UserId     uint64
 }
 
 type TokenDetails struct {

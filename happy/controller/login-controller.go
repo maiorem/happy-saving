@@ -34,9 +34,9 @@ func (controller *loginController) Login(ctx *gin.Context) {
 		return
 	}
 
-	isAuthenticated := controller.loginService.Login(credentials.Useremail, credentials.Password)
+	userId, isAuthenticated := controller.loginService.Login(credentials.Useremail, credentials.Password)
 	if isAuthenticated {
-		ts, err := controller.jWtService.GenerateToken(credentials.Useremail, true)
+		ts, err := controller.jWtService.GenerateToken(userId, true)
 		if err != nil {
 			ctx.JSON(http.StatusUnprocessableEntity, err.Error())
 			return
@@ -47,7 +47,7 @@ func (controller *loginController) Login(ctx *gin.Context) {
 		}
 		ctx.JSON(http.StatusOK, tokens)
 
-		saveErr := controller.jWtService.CreateAuth(credentials.Useremail, ts)
+		saveErr := controller.jWtService.CreateAuth(userId, ts)
 		if saveErr != nil {
 			ctx.JSON(http.StatusUnprocessableEntity, saveErr.Error())
 		}

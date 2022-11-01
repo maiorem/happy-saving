@@ -19,20 +19,20 @@ import (
 )
 
 type JWTService interface {
-	GenerateToken(name string, admin bool) (td dto.TokenDetails, err error)
+	GenerateToken(userid uint64, admin bool) (td dto.TokenDetails, err error)
 	ValidateToken(tokenString string) (*jwt.Token, error)
 	VerifyToken(r *http.Request) (*jwt.Token, error)
-	CreateAuth(useremail string, td dto.TokenDetails) (err error)
+	CreateAuth(userId uint64, td dto.TokenDetails) (err error)
 	DeleteTokens(authD *dto.AccessDetails) error
 	ExtractTokenMetadata(r *http.Request) (*dto.AccessDetails, error)
-	FetchAuth(authD *dto.AccessDetails) (string, error)
+	FetchAuth(authD *dto.AccessDetails) (uint64, error)
 	Refresh(c *gin.Context)
 }
 
 type jwtCustomClaims struct {
-	Useremail string `json:"email"`
-	Admin     bool   `json:"admin"`
-	UUID      string `json:"token_uuid"`
+	UserID uint64 `json:"user_id"`
+	Admin  bool   `json:"admin"`
+	UUID   string `json:"token_uuid"`
 	jwt.StandardClaims
 }
 
@@ -56,16 +56,16 @@ func getSecretKey() string {
 	return secret
 }
 
-func (jwtSrv *jwtService) GenerateToken(useremail string, admin bool) (td dto.TokenDetails, err error) {
+func (jwtSrv *jwtService) GenerateToken(userid uint64, admin bool) (td dto.TokenDetails, err error) {
 
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
 	td.AccessUuid = uuid.NewV4().String()
 	td.RtExpires = time.Now().Add(time.Hour * 24 * 7).Unix()
-	td.RefreshUuid = fmt.Sprintf("%s++%s", td.AccessUuid, useremail)
+	td.RefreshUuid = fmt.Sprintf("%s++%d", td.AccessUuid, userid)
 
 	// Set custom and standard claims
 	atClaims := &jwtCustomClaims{
-		useremail,
+		userid,
 		admin,
 		td.AccessUuid,
 		jwt.StandardClaims{
@@ -85,7 +85,7 @@ func (jwtSrv *jwtService) GenerateToken(useremail string, admin bool) (td dto.To
 	}
 
 	rtClaims := &jwtCustomClaims{
-		useremail,
+		userid,
 		admin,
 		td.RefreshUuid,
 		jwt.StandardClaims{
@@ -149,30 +149,30 @@ func (jwtSrv *jwtService) ExtractTokenMetadata(r *http.Request) (*dto.AccessDeta
 		if !ok {
 			return nil, err
 		}
-		email, ok := claims["email"].(string)
+		userId, err := strconv.ParseUint(fmt.Sprintf("%.f", claims["user_id"]), 10, 64)
 		if !ok {
 			return nil, err
 		}
 		return &dto.AccessDetails{
 			AccessUuid: accessUuid,
-			UserEmail:  email,
+			UserId:     userId,
 		}, nil
 	}
 	return nil, err
 }
 
 // 레디스에 토큰 저장
-func (jwtSrv *jwtService) CreateAuth(useremail string, td dto.TokenDetails) (err error) {
+func (jwtSrv *jwtService) CreateAuth(userId uint64, td dto.TokenDetails) (err error) {
 	client := common.GetClient()
 
 	at := time.Unix(td.AtExpires, 0) //converting Unix to UTC
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	if err = client.Set(td.AccessUuid, strconv.Quote(useremail), at.Sub(now)).Err(); err != nil {
+	if err = client.Set(td.AccessUuid, strconv.Itoa(int(userId)), at.Sub(now)).Err(); err != nil {
 		return
 	}
-	if err = client.Set(td.RefreshUuid, strconv.Quote(useremail), rt.Sub(now)).Err(); err != nil {
+	if err = client.Set(td.RefreshUuid, strconv.Itoa(int(userId)), rt.Sub(now)).Err(); err != nil {
 		return
 	}
 
@@ -184,7 +184,7 @@ func (jwtSrv *jwtService) DeleteTokens(authD *dto.AccessDetails) error {
 	client := common.GetClient()
 
 	//get the refresh uuid
-	refreshUuid := fmt.Sprintf("%s++%s", authD.AccessUuid, authD.UserEmail)
+	refreshUuid := fmt.Sprintf("%s++%d", authD.AccessUuid, authD.UserId)
 
 	//delete access token
 	deletedAt, err := client.Del(authD.AccessUuid).Result()
@@ -206,18 +206,18 @@ func (jwtSrv *jwtService) DeleteTokens(authD *dto.AccessDetails) error {
 	return nil
 }
 
-func (jwtSrv *jwtService) FetchAuth(authD *dto.AccessDetails) (string, error) {
+func (jwtSrv *jwtService) FetchAuth(authD *dto.AccessDetails) (uint64, error) {
 	client := common.GetClient()
-	useremail, err := client.Get(authD.AccessUuid).Result()
+	userid, err := client.Get(authD.AccessUuid).Result()
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
-	UserEmail := strconv.Quote(useremail)
-	if authD.UserEmail != UserEmail {
-		return "", errors.New("unauthorized")
+	userID, _ := strconv.ParseUint(userid, 10, 64)
+	if authD.UserId != userID {
+		return 0, errors.New("unauthorized")
 	}
-	return useremail, nil
+	return userID, nil
 }
 
 func DeleteAuth(givenUuid string) (uint64, error) {
@@ -263,12 +263,12 @@ func (jwtSrv *jwtService) Refresh(c *gin.Context) {
 	//Since token is valid, get the uuid:
 	claims, ok := token.Claims.(jwt.MapClaims) //the token claims should conform to MapClaims
 	if ok && token.Valid {
-		refreshUuid, ok := claims["refresh_uuid"].(string) //convert the interface to string
+		refreshUuid, ok := claims["token_uuid"].(string) //convert the interface to string
 		if !ok {
 			c.JSON(http.StatusUnprocessableEntity, err)
 			return
 		}
-		useremail, err := strconv.Unquote(fmt.Sprintf("%s", claims["email"]))
+		userId, err := strconv.ParseUint(fmt.Sprintf("%.f", claims["user_id"]), 10, 64)
 
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, "Error occurred")
@@ -286,13 +286,13 @@ func (jwtSrv *jwtService) Refresh(c *gin.Context) {
 			return
 		}
 		//Create new pairs of refresh and access tokens
-		ts, createErr := jwtSrv.GenerateToken(useremail, admin)
+		ts, createErr := jwtSrv.GenerateToken(userId, admin)
 		if createErr != nil {
 			c.JSON(http.StatusForbidden, createErr.Error())
 			return
 		}
 		//save the tokens metadata to redis
-		saveErr := jwtSrv.CreateAuth(useremail, ts)
+		saveErr := jwtSrv.CreateAuth(userId, ts)
 		if saveErr != nil {
 			c.JSON(http.StatusForbidden, saveErr.Error())
 			return

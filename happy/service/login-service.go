@@ -5,7 +5,7 @@ import (
 )
 
 type LoginService interface {
-	Login(useremail string, password string) bool
+	Login(useremail string, password string) (uint64, bool)
 }
 
 type loginService struct {
@@ -18,7 +18,8 @@ func NewLoginService(happyRepository repository.Repository) LoginService {
 	}
 }
 
-func (service *loginService) Login(useremail string, password string) bool {
+func (service *loginService) Login(useremail string, password string) (uint64, bool) {
 	var user = service.repository.Login(useremail)
-	return password == user.Password
+	userid := user.ID
+	return userid, password == user.Password
 }
