@@ -14,6 +14,7 @@ import (
 	"happy/dto"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -23,6 +24,8 @@ type JWTService interface {
 	VerifyToken(r *http.Request) (*jwt.Token, error)
 	CreateAuth(useremail string, td dto.TokenDetails) (err error)
 	DeleteTokens(authD *dto.AccessDetails) error
+	ExtractTokenMetadata(r *http.Request) (*dto.AccessDetails, error)
+	Refresh(c *gin.Context)
 }
 
 type jwtCustomClaims struct {
@@ -133,6 +136,30 @@ func (jwtSrv *jwtService) VerifyToken(r *http.Request) (*jwt.Token, error) {
 	})
 }
 
+// 메타데이터 출력 차후 검토 2022.11.01
+func (jwtSrv *jwtService) ExtractTokenMetadata(r *http.Request) (*dto.AccessDetails, error) {
+	token, err := jwtSrv.VerifyToken(r)
+	if err != nil {
+		return nil, err
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		accessUuid, ok := claims["token_uuid"].(string)
+		if !ok {
+			return nil, err
+		}
+		email, ok := claims["email"].(string)
+		if !ok {
+			return nil, err
+		}
+		return &dto.AccessDetails{
+			AccessUuid: accessUuid,
+			UserEmail:  email,
+		}, nil
+	}
+	return nil, err
+}
+
 // 레디스에 토큰 저장
 func (jwtSrv *jwtService) CreateAuth(useremail string, td dto.TokenDetails) (err error) {
 	client := common.GetClient()
@@ -176,4 +203,122 @@ func (jwtSrv *jwtService) DeleteTokens(authD *dto.AccessDetails) error {
 	}
 
 	return nil
+}
+
+func CreateAuth(useremail string, td dto.TokenDetails) (err error) {
+	client := common.GetClient()
+
+	at := time.Unix(td.AtExpires, 0) //converting Unix to UTC
+	rt := time.Unix(td.RtExpires, 0)
+	now := time.Now()
+
+	if err = client.Set(td.AccessUuid, strconv.Quote(useremail), at.Sub(now)).Err(); err != nil {
+		return
+	}
+	if err = client.Set(td.RefreshUuid, strconv.Quote(useremail), rt.Sub(now)).Err(); err != nil {
+		return
+	}
+
+	return
+}
+
+func FetchAuth(authD *dto.AccessDetails) (string, error) {
+	client := common.GetClient()
+	useremail, err := client.Get(authD.AccessUuid).Result()
+	if err != nil {
+		return "", err
+	}
+
+	UserEmail := strconv.Quote(useremail)
+	if authD.UserEmail != UserEmail {
+		return "", errors.New("unauthorized")
+	}
+	return useremail, nil
+}
+
+func DeleteAuth(givenUuid string) (uint64, error) {
+	client := common.GetClient()
+	deleted, err := client.Del(givenUuid).Result()
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(deleted), nil
+}
+
+func (jwtSrv *jwtService) Refresh(c *gin.Context) {
+	mapToken := map[string]string{}
+	if err := c.ShouldBindJSON(&mapToken); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	refreshToken := mapToken["refresh_token"]
+
+	//verify the token
+	// os.Setenv("REFRESH_SECRET", "mcmvmkmsdnfsdmfdsjf") //this should be in an env file
+	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+		//Make sure that the token method conform to "SigningMethodHMAC"
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(jwtSrv.secretKey), nil
+	})
+
+	//if there is an error, the token must have expired
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, "Refresh token expired")
+		return
+	}
+
+	//is token valid?
+	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
+		c.JSON(http.StatusUnauthorized, err)
+		return
+	}
+
+	//Since token is valid, get the uuid:
+	claims, ok := token.Claims.(jwt.MapClaims) //the token claims should conform to MapClaims
+	if ok && token.Valid {
+		refreshUuid, ok := claims["refresh_uuid"].(string) //convert the interface to string
+		if !ok {
+			c.JSON(http.StatusUnprocessableEntity, err)
+			return
+		}
+		useremail, err := strconv.Unquote(fmt.Sprintf("%s", claims["email"]))
+
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, "Error occurred")
+			return
+		}
+		admin, err := strconv.ParseBool(fmt.Sprintf("%b", claims["admin"]))
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, "Error occurred")
+			return
+		}
+		//Delete the previous Refresh Token
+		deleted, delErr := DeleteAuth(refreshUuid)
+		if delErr != nil || deleted == 0 { //if any goes wrong
+			c.JSON(http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		//Create new pairs of refresh and access tokens
+		ts, createErr := jwtSrv.GenerateToken(useremail, admin)
+		if createErr != nil {
+			c.JSON(http.StatusForbidden, createErr.Error())
+			return
+		}
+		//save the tokens metadata to redis
+		saveErr := jwtSrv.CreateAuth(useremail, ts)
+		if saveErr != nil {
+			c.JSON(http.StatusForbidden, saveErr.Error())
+			return
+		}
+		tokens := map[string]string{
+			"access_token":  ts.AccessToken,
+			"refresh_token": ts.RefreshToken,
+		}
+		c.JSON(http.StatusCreated, tokens)
+	} else {
+		c.JSON(http.StatusUnauthorized, "refresh expired")
+	}
 }

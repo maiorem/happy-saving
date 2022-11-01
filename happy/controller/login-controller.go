@@ -5,7 +5,6 @@ import (
 	"happy/service"
 	"net/http"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,7 +57,7 @@ func (controller *loginController) Login(ctx *gin.Context) {
 
 // 로그아웃 로직 차후 검토 2022.11.01
 func (controller *loginController) Logout(ctx *gin.Context) {
-	metadata, err := ExtractTokenMetadata(ctx.Request)
+	metadata, err := controller.jWtService.ExtractTokenMetadata(ctx.Request)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, "unauthorized")
 		return
@@ -70,28 +69,4 @@ func (controller *loginController) Logout(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, "Successfully logged out")
-}
-
-// 메타데이터 출력 차후 검토 2022.11.01
-func ExtractTokenMetadata(r *http.Request) (*dto.AccessDetails, error) {
-	token, err := service.NewJWTService().VerifyToken(r)
-	if err != nil {
-		return nil, err
-	}
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if ok && token.Valid {
-		accessUuid, ok := claims["token_uuid"].(string)
-		if !ok {
-			return nil, err
-		}
-		email, ok := claims["email"].(string)
-		if !ok {
-			return nil, err
-		}
-		return &dto.AccessDetails{
-			AccessUuid: accessUuid,
-			UserEmail:  email,
-		}, nil
-	}
-	return nil, err
 }
