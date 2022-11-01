@@ -4,6 +4,7 @@ import (
 	"happy/dto"
 	"happy/entity"
 	"happy/service"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,8 @@ type SaveBoxController interface {
 }
 
 type boxController struct {
-	service service.BoxService
+	service    service.BoxService
+	jwtService service.JWTService
 }
 
 var validate *validator.Validate
@@ -45,8 +47,23 @@ func (c *boxController) Save(ctx *gin.Context) error {
 	var savebox dto.CreateBoxRequest
 	err := ctx.ShouldBindJSON(&savebox)
 	if err != nil {
+		ctx.JSON(http.StatusUnprocessableEntity, "invalid json")
 		return err
 	}
+	metadata, err := c.jwtService.ExtractTokenMetadata(ctx.Request)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, "unauthorized")
+		return err
+	}
+
+	userid, err := c.jwtService.FetchAuth(metadata)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, err.Error())
+		return err
+	}
+
+	savebox.UserID = userid
+
 	c.service.Save(savebox)
 	return nil
 }

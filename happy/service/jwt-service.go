@@ -25,6 +25,7 @@ type JWTService interface {
 	CreateAuth(useremail string, td dto.TokenDetails) (err error)
 	DeleteTokens(authD *dto.AccessDetails) error
 	ExtractTokenMetadata(r *http.Request) (*dto.AccessDetails, error)
+	FetchAuth(authD *dto.AccessDetails) (string, error)
 	Refresh(c *gin.Context)
 }
 
@@ -205,24 +206,7 @@ func (jwtSrv *jwtService) DeleteTokens(authD *dto.AccessDetails) error {
 	return nil
 }
 
-func CreateAuth(useremail string, td dto.TokenDetails) (err error) {
-	client := common.GetClient()
-
-	at := time.Unix(td.AtExpires, 0) //converting Unix to UTC
-	rt := time.Unix(td.RtExpires, 0)
-	now := time.Now()
-
-	if err = client.Set(td.AccessUuid, strconv.Quote(useremail), at.Sub(now)).Err(); err != nil {
-		return
-	}
-	if err = client.Set(td.RefreshUuid, strconv.Quote(useremail), rt.Sub(now)).Err(); err != nil {
-		return
-	}
-
-	return
-}
-
-func FetchAuth(authD *dto.AccessDetails) (string, error) {
+func (jwtSrv *jwtService) FetchAuth(authD *dto.AccessDetails) (string, error) {
 	client := common.GetClient()
 	useremail, err := client.Get(authD.AccessUuid).Result()
 	if err != nil {

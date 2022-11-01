@@ -104,6 +104,7 @@ func myboxlist(ctx *gin.Context) {
 func myboxsave(ctx *gin.Context) {
 
 	err := boxController.Save(ctx)
+
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	} else {
