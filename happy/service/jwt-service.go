@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"happy/common"
 	"os"
 	"time"
 
@@ -9,19 +11,29 @@ import (
 )
 
 type JWTService interface {
-	GenerateToken(name string, admin bool) string
+	GenerateToken(name string, admin bool) (td TokenDetails, err error)
 	ValidateToken(tokenString string) (*jwt.Token, error)
 }
 
 type jwtCustomClaims struct {
-	Name  string `json:"name"`
-	Admin bool   `json:"admin"`
+	Useremail string `json:"email"`
+	Admin     bool   `json:"admin"`
 	jwt.StandardClaims
 }
 
 type jwtService struct {
 	secretKey string
 	issuer    string
+}
+
+type AccessDetails struct {
+	AccessUuid string
+	UserId     uint64
+}
+
+type TokenDetails struct {
+	AccessToken  string
+	RefreshToken string
 }
 
 func NewJWTService() JWTService {
@@ -39,11 +51,11 @@ func getSecretKey() string {
 	return secret
 }
 
-func (jwtSrv *jwtService) GenerateToken(username string, admin bool) string {
+func (jwtSrv *jwtService) GenerateToken(useremail string, admin bool) (td TokenDetails, err error) {
 
 	// Set custom and standard claims
-	claims := &jwtCustomClaims{
-		username,
+	atClaims := &jwtCustomClaims{
+		useremail,
 		admin,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
@@ -53,14 +65,32 @@ func (jwtSrv *jwtService) GenerateToken(username string, admin bool) string {
 	}
 
 	// Create token with claims
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 
 	// Generate encoded token using the secret signing key
-	t, err := token.SignedString([]byte(jwtSrv.secretKey))
+	td.AccessToken, err = at.SignedString([]byte(jwtSrv.secretKey))
 	if err != nil {
 		panic(err)
 	}
-	return t
+
+	rtClaims := &jwtCustomClaims{
+		useremail,
+		admin,
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 24 * 7).Unix(),
+			Issuer:    jwtSrv.issuer,
+			IssuedAt:  time.Now().Unix(),
+		},
+	}
+
+	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
+
+	td.RefreshToken, err = rt.SignedString([]byte(jwtSrv.secretKey))
+	if err != nil {
+		panic(err)
+	}
+
+	return td, nil
 }
 
 func (jwtSrv *jwtService) ValidateToken(tokenString string) (*jwt.Token, error) {
@@ -72,4 +102,31 @@ func (jwtSrv *jwtService) ValidateToken(tokenString string) (*jwt.Token, error) 
 		// Return the secret signing key
 		return []byte(jwtSrv.secretKey), nil
 	})
+}
+
+// 토큰 삭제 로직 차후 검토  2022.11.01
+func DeleteTokens(authD *AccessDetails) error {
+	client := common.GetClient()
+
+	//get the refresh uuid
+	refreshUuid := fmt.Sprintf("%s++%d", authD.AccessUuid, authD.UserId)
+
+	//delete access token
+	deletedAt, err := client.Del(authD.AccessUuid).Result()
+	if err != nil {
+		return err
+	}
+
+	//delete refresh token
+	deletedRt, err := client.Del(refreshUuid).Result()
+	if err != nil {
+		return err
+	}
+
+	//When the record is deleted, the return value is 1
+	if deletedAt != 1 || deletedRt != 1 {
+		return errors.New("something went wrong")
+	}
+
+	return nil
 }

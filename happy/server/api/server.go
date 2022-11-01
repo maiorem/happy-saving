@@ -79,19 +79,11 @@ func happymain(ctx *gin.Context) {
 	// 회원 정보가 없으면
 
 	// 회원 정보가 존재하면
-	ctx.JSON(http.StatusOK, boxController.FindAll())
+	ctx.JSON(http.StatusOK, boxController.ActivateBox())
 }
 
 func userlogin(ctx *gin.Context) {
-	token := loginController.Login(ctx)
-	if token != "" {
-		ctx.JSON(http.StatusOK, gin.H{
-			"token": token,
-		})
-	} else {
-		ctx.JSON(http.StatusUnauthorized, nil)
-	}
-
+	loginController.Login(ctx)
 }
 
 func userjoin(ctx *gin.Context) {
@@ -117,10 +109,6 @@ func myboxsave(ctx *gin.Context) {
 	} else {
 		ctx.JSON(http.StatusOK, gin.H{"message": "New Box is Valid"})
 	}
-}
-
-func activatebox(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, boxController.ActivateBox())
 }
 
 func writediary(ctx *gin.Context) {
