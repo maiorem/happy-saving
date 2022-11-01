@@ -16,7 +16,7 @@ import (
 var (
 	happyRepository repository.Repository = repository.NewRepository()
 
-	loginService    service.LoginService       = service.NewLoginService()
+	loginService    service.LoginService       = service.NewLoginService(happyRepository)
 	jwtService      service.JWTService         = service.NewJWTService()
 	loginController controller.LoginController = controller.NewLoginController(loginService, jwtService)
 

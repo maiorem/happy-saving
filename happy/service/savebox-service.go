@@ -44,5 +44,7 @@ func (service *boxService) FindAll() []entity.SaveBox {
 }
 
 func (service *boxService) ActivateBox() entity.SaveBox {
-	return service.repository.ActivateBox()
+	var box = service.repository.ActivateBox()
+	box.IsOpened = entity.IsOpenedChange(box.OpenDate, box.IsOpened)
+	return box
 }

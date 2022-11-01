@@ -15,7 +15,8 @@ type Repository interface {
 	UpdateUser(user dto.UpdateUserRequest) // 회원정보수정
 	FindAllUser() []entity.User            // 회원 리스트
 	DeleteUser(user entity.User)           // 회원탈퇴
-	FindByEmail(email string) entity.User  // 회원 정보보기 ( = 로그인 )
+	FindByEmail(email string) entity.User  // 회원 정보보기
+	Login(email string) entity.User        // 로그인
 
 	// Savebox
 	Save(savebox dto.CreateBoxRequest)           // 저금통 등록
@@ -100,9 +101,9 @@ func (db *database) FindByEmail(email string) entity.User {
 
 ////////// 로그인
 
-func (db *database) Login(email string, password string) entity.User {
+func (db *database) Login(email string) entity.User {
 	var user entity.User
-	db.connection.Select("email = ? and password = ?", email, password).First(&user)
+	db.connection.Select("email = ?", email).First(&user)
 	return user
 }
 

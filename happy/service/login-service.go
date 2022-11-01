@@ -1,22 +1,24 @@
 package service
 
+import (
+	"happy/repository"
+)
+
 type LoginService interface {
 	Login(useremail string, password string) bool
 }
 
 type loginService struct {
-	authorizedUserEmail string
-	authorizedPassword  string
+	repository repository.Repository
 }
 
-func NewLoginService() LoginService {
+func NewLoginService(happyRepository repository.Repository) LoginService {
 	return &loginService{
-		authorizedUserEmail: "maiorem",
-		authorizedPassword:  "123456",
+		repository: happyRepository,
 	}
 }
 
 func (service *loginService) Login(useremail string, password string) bool {
-	return service.authorizedUserEmail == useremail &&
-		service.authorizedPassword == password
+	var user = service.repository.Login(useremail)
+	return password == user.Password
 }
