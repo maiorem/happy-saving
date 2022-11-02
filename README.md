@@ -3,8 +3,8 @@
  
 
 ## Tech
-Go        
-gin-gonic         
-mySql, Gorm        
-Redis       
-ECS, EC2, Docker, nginx        
+- Go        
+- gin-gonic         
+- mySql, Gorm        
+- Redis       
+- ECS, EC2, Docker, nginx        
