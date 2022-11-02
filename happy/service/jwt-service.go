@@ -56,6 +56,7 @@ func getSecretKey() string {
 	return secret
 }
 
+// 토큰 생성
 func (jwtSrv *jwtService) GenerateToken(userid uint64, admin bool) (td dto.TokenDetails, err error) {
 
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()

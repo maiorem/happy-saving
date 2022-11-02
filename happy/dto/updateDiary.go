@@ -1,13 +1,8 @@
 package dto
 
-import (
-	"happy/entity"
-	"time"
-)
-
 type UpdateDiaryRequest struct {
-	ID        uint64
-	Emoji     entity.Emoji
-	UpdatedAt time.Time
-	Content   string
+	ID      uint64 `json:"diary_id"`
+	BoxID   uint64 `json:"box_id"`
+	EmojiID uint64 `json:"emoji_id"`
+	Content string `json:"content"`
 }
