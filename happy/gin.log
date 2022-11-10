@@ -2,14 +2,14 @@
  - using env:	export GIN_MODE=release
  - using code:	gin.SetMode(gin.ReleaseMode)
 
-[GIN-debug] GET    /                         --> happy/server/api.happymain (5 handlers)
-[GIN-debug] POST   /login                    --> happy/server/api.userlogin (5 handlers)
-[GIN-debug] GET    /boxlist                  --> happy/server/api.myboxlist (5 handlers)
-[GIN-debug] POST   /boxsave                  --> happy/server/api.myboxsave (5 handlers)
-[GIN-debug] POST   /join                     --> happy/server/api.userjoin (5 handlers)
-[GIN-debug] POST   /writediary               --> happy/server/api.writediary (5 handlers)
-[GIN-debug] GET    /diaries                  --> happy/server/api.mydiarylist (5 handlers)
-[GIN-debug] GET    /diaries/:id              --> happy/server/api.mydiaryById (5 handlers)
+[GIN-debug] GET    /                         --> happy/server/api.happymain (4 handlers)
+[GIN-debug] POST   /login                    --> happy/server/api.userlogin (4 handlers)
+[GIN-debug] POST   /join                     --> happy/server/api.userjoin (4 handlers)
+[GIN-debug] GET    /api/boxlist              --> happy/server/api.myboxlist (5 handlers)
+[GIN-debug] POST   /api/boxsave              --> happy/server/api.myboxsave (5 handlers)
+[GIN-debug] POST   /api/writediary           --> happy/server/api.writediary (5 handlers)
+[GIN-debug] GET    /api/diaries              --> happy/server/api.mydiarylist (5 handlers)
+[GIN-debug] GET    /api/diaries/:id          --> happy/server/api.mydiaryById (5 handlers)
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8089
