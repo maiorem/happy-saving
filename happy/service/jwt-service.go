@@ -3,18 +3,17 @@ package service
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"happy/common"
-	"happy/dto"
+	"happy-save-api/common"
+	"happy-save-api/dto"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -26,34 +25,43 @@ type JWTService interface {
 	DeleteTokens(authD *dto.AccessDetails) error
 	ExtractTokenMetadata(r *http.Request) (*dto.AccessDetails, error)
 	FetchAuth(authD *dto.AccessDetails) (uint64, error)
-	Refresh(c *gin.Context)
+	DeleteAuth(givenUuid string) (uint64, error)
 }
 
-type jwtCustomClaims struct {
-	UserID uint64 `json:"user_id"`
-	Admin  bool   `json:"admin"`
-	UUID   string `json:"token_uuid"`
+type jwtACCESSCustomClaims struct {
+	UserID     uint64 `json:"user_id"`
+	Admin      bool   `json:"admin"`
+	AccessUUID string `json:"access_uuid"`
+	jwt.StandardClaims
+}
+
+type jwtREFRESHCustomClaims struct {
+	UserID      uint64 `json:"user_id"`
+	Admin       bool   `json:"admin"`
+	RefreshUUID string `json:"refresh_uuid"`
 	jwt.StandardClaims
 }
 
 type jwtService struct {
-	secretKey string
-	issuer    string
+	ACCESS_SECRET  string
+	REFRESH_SECRET string
+	issuer         string
 }
 
 func NewJWTService() JWTService {
 	return &jwtService{
-		secretKey: getSecretKey(),
-		issuer:    "www.koldsleep.com",
+		ACCESS_SECRET:  GetAccessSecret(),
+		REFRESH_SECRET: GetRefreshSecret(),
+		issuer:         "www.koldsleep.com",
 	}
 }
 
-func getSecretKey() string {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "secret"
-	}
-	return secret
+func GetAccessSecret() string {
+	return "AccessEnfant21878!"
+}
+
+func GetRefreshSecret() string {
+	return "RefreshEnfatn21878!"
 }
 
 // 토큰 생성
@@ -65,7 +73,7 @@ func (jwtSrv *jwtService) GenerateToken(userid uint64, admin bool) (td dto.Token
 	td.RefreshUuid = fmt.Sprintf("%s++%d", td.AccessUuid, userid)
 
 	// Set custom and standard claims
-	atClaims := &jwtCustomClaims{
+	atClaims := &jwtACCESSCustomClaims{
 		userid,
 		admin,
 		td.AccessUuid,
@@ -80,12 +88,12 @@ func (jwtSrv *jwtService) GenerateToken(userid uint64, admin bool) (td dto.Token
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 
 	// Generate encoded token using the secret signing key
-	td.AccessToken, err = at.SignedString([]byte(jwtSrv.secretKey))
+	td.AccessToken, err = at.SignedString([]byte(jwtSrv.ACCESS_SECRET))
 	if err != nil {
 		panic(err)
 	}
 
-	rtClaims := &jwtCustomClaims{
+	rtClaims := &jwtREFRESHCustomClaims{
 		userid,
 		admin,
 		td.RefreshUuid,
@@ -98,7 +106,7 @@ func (jwtSrv *jwtService) GenerateToken(userid uint64, admin bool) (td dto.Token
 
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
 
-	td.RefreshToken, err = rt.SignedString([]byte(jwtSrv.secretKey))
+	td.RefreshToken, err = rt.SignedString([]byte(jwtSrv.REFRESH_SECRET))
 	if err != nil {
 		panic(err)
 	}
@@ -122,7 +130,7 @@ func (jwtSrv *jwtService) ValidateToken(tokenString string) (*jwt.Token, error) 
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 		// Return the secret signing key
-		return []byte(jwtSrv.secretKey), nil
+		return []byte(jwtSrv.ACCESS_SECRET), nil
 	})
 }
 
@@ -134,7 +142,7 @@ func (jwtSrv *jwtService) VerifyToken(r *http.Request) (*jwt.Token, error) {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 		// Return the secret signing key
-		return []byte(jwtSrv.secretKey), nil
+		return []byte(jwtSrv.ACCESS_SECRET), nil
 	})
 }
 
@@ -146,7 +154,7 @@ func (jwtSrv *jwtService) ExtractTokenMetadata(r *http.Request) (*dto.AccessDeta
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		accessUuid, ok := claims["token_uuid"].(string)
+		accessUuid, ok := claims["access_uuid"].(string)
 		if !ok {
 			return nil, err
 		}
@@ -209,6 +217,9 @@ func (jwtSrv *jwtService) DeleteTokens(authD *dto.AccessDetails) error {
 
 func (jwtSrv *jwtService) FetchAuth(authD *dto.AccessDetails) (uint64, error) {
 	client := common.GetClient()
+	
+	log.Println("auth ID: ", authD.AccessUuid)
+
 	userid, err := client.Get(authD.AccessUuid).Result()
 	if err != nil {
 		return 0, err
@@ -221,7 +232,7 @@ func (jwtSrv *jwtService) FetchAuth(authD *dto.AccessDetails) (uint64, error) {
 	return userID, nil
 }
 
-func DeleteAuth(givenUuid string) (uint64, error) {
+func (jwtSrv *jwtService) DeleteAuth(givenUuid string) (uint64, error) {
 	client := common.GetClient()
 	deleted, err := client.Del(givenUuid).Result()
 	if err != nil {
@@ -229,81 +240,4 @@ func DeleteAuth(givenUuid string) (uint64, error) {
 	}
 
 	return uint64(deleted), nil
-}
-
-func (jwtSrv *jwtService) Refresh(c *gin.Context) {
-	mapToken := map[string]string{}
-	if err := c.ShouldBindJSON(&mapToken); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, err.Error())
-		return
-	}
-	refreshToken := mapToken["refresh_token"]
-
-	//verify the token
-	// os.Setenv("REFRESH_SECRET", "mcmvmkmsdnfsdmfdsjf") //this should be in an env file
-	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
-		//Make sure that the token method conform to "SigningMethodHMAC"
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(jwtSrv.secretKey), nil
-	})
-
-	//if there is an error, the token must have expired
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, "Refresh token expired")
-		return
-	}
-
-	//is token valid?
-	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
-		c.JSON(http.StatusUnauthorized, err)
-		return
-	}
-
-	//Since token is valid, get the uuid:
-	claims, ok := token.Claims.(jwt.MapClaims) //the token claims should conform to MapClaims
-	if ok && token.Valid {
-		refreshUuid, ok := claims["token_uuid"].(string) //convert the interface to string
-		if !ok {
-			c.JSON(http.StatusUnprocessableEntity, err)
-			return
-		}
-		userId, err := strconv.ParseUint(fmt.Sprintf("%.f", claims["user_id"]), 10, 64)
-
-		if err != nil {
-			c.JSON(http.StatusUnprocessableEntity, "Error occurred")
-			return
-		}
-		admin, err := strconv.ParseBool(fmt.Sprintf("%b", claims["admin"]))
-		if err != nil {
-			c.JSON(http.StatusUnprocessableEntity, "Error occurred")
-			return
-		}
-		//Delete the previous Refresh Token
-		deleted, delErr := DeleteAuth(refreshUuid)
-		if delErr != nil || deleted == 0 { //if any goes wrong
-			c.JSON(http.StatusUnauthorized, "unauthorized")
-			return
-		}
-		//Create new pairs of refresh and access tokens
-		ts, createErr := jwtSrv.GenerateToken(userId, admin)
-		if createErr != nil {
-			c.JSON(http.StatusForbidden, createErr.Error())
-			return
-		}
-		//save the tokens metadata to redis
-		saveErr := jwtSrv.CreateAuth(userId, ts)
-		if saveErr != nil {
-			c.JSON(http.StatusForbidden, saveErr.Error())
-			return
-		}
-		tokens := map[string]string{
-			"access_token":  ts.AccessToken,
-			"refresh_token": ts.RefreshToken,
-		}
-		c.JSON(http.StatusCreated, tokens)
-	} else {
-		c.JSON(http.StatusUnauthorized, "refresh expired")
-	}
 }

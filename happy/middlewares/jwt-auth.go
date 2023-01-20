@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"happy/service"
+	"happy-save-api/service"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -21,9 +21,10 @@ func AuthorizeJWT() gin.HandlerFunc {
 
 		if token.Valid {
 			claims := token.Claims.(jwt.MapClaims)
-			log.Println("Claims[Email]: ", claims["email"])
+			log.Println("Claims[UserId]: ", claims["user_id"])
 			log.Println("Claims[Admin]: ", claims["admin"])
-			log.Println("Claims[Admin]: ", claims["token_uuid"])
+			log.Println("Claims[access_uuid]: ", claims["access_uuid"])
+			log.Println("Claims[refresh_uuid]: ", claims["refresh_uuid"])
 			log.Println("Claims[Issuer]: ", claims["iss"])
 			log.Println("Claims[IssuedAt]: ", claims["iat"])
 			log.Println("Claims[ExpiresAt]: ", claims["exp"])

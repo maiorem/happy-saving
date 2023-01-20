@@ -1,10 +1,10 @@
 package api
 
 import (
-	"happy/controller"
-	"happy/middlewares"
-	"happy/repository"
-	"happy/service"
+	"happy-save-api/controller"
+	"happy-save-api/middlewares"
+	"happy-save-api/repository"
+	"happy-save-api/service"
 	"io"
 	"net/http"
 	"os"
@@ -22,10 +22,10 @@ var (
 	boxService    service.BoxService           = service.BoxNew(happyRepository)
 	boxController controller.SaveBoxController = controller.BoxNew(boxService)
 
-	userService    service.UserService           = service.UserNew()
+	userService    service.UserService           = service.UserNew(happyRepository)
 	userController controller.SaveUserController = controller.UserNew(userService)
 
-	diaryService    service.DiaryService           = service.DiaryNew()
+	diaryService    service.DiaryService           = service.DiaryNew(happyRepository)
 	diaryController controller.SaveDiaryController = controller.DiaryNew(diaryService)
 )
 
@@ -45,50 +45,71 @@ func Start() {
 
 	server.Use(gin.Recovery(), middlewares.Logger(), middlewares.CORSmiddleware())
 
-	server.GET("/", happymain)
+	server.GET("/", happymain) // main test
+
+	// health check
+	server.GET("/healthcheck", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"message": "Health check!"})
+	})
 
 	server.POST("/login", userlogin)
 	server.POST("/join", userjoin)
 
 	// JWT Authorization Middleware applies to "/api" only.
-	apiRoutes := server.Group("/api", middlewares.AuthorizeJWT())
+	apiRoutes := server.Group("/api")
 	{
 
-		apiRoutes.GET("/boxlist", myboxlist)
-		apiRoutes.POST("/boxsave", myboxsave)
+		apiRoutes.POST("/refresh", refresh) // 토큰 리프레시
 
-		apiRoutes.POST("/writediary", writediary)
+		apiRoutes.POST("/logout", userlogout)    // 로그아웃
+		apiRoutes.GET("/user", userOne)          // 내 정보 보기
+		apiRoutes.PUT("/user", userModify)       // 이름, 비밀번호 수정
+		apiRoutes.PUT("/withdraw", userWithDraw) // 회원 탈퇴 (회원 계정 비활성화)
 
-		apiRoutes.GET("/diaries", mydiarylist)
+		apiRoutes.POST("/box", myboxsave)         // 저금통 생성
+		apiRoutes.GET("/user/box", myboxlist)     // 저금통 목록
+		apiRoutes.PUT("/box/:id", myboxupdate)    // 저금통 수정 (이름)
+		apiRoutes.DELETE("/box/:id", myboxdelete) // 저금통 삭제 (완전삭제?)
+		apiRoutes.GET("/box/:id", myboxone)       // history 저금통 상세
+		apiRoutes.GET("/box/now", nowbox)         // 현재 작성 중 저금통 (메인)
 
-		apiRoutes.GET("/diaries/:id", mydiaryById)
+		//apiRoutes.GET("/box/:id", mydiarylist)        // 저금통 상세 (다이어리 목록)
+		apiRoutes.POST("/diary", writediary)          // 다이어리 작성
+		apiRoutes.GET("/diary/:id", mydiaryById)      // 다이어리 상세
+		apiRoutes.PUT("/diary/:id", mydiaryupdate)    // 다이어리 내용 수정
+		apiRoutes.GET("/diary/:id/count", countdiary) // 현재 저금통 내 다이어리 수
+
+		apiRoutes.GET("/emoji", emojilist) // 이모지 리스트
+		apiRoutes.GET("/emoji/:id", emoji) // 이모지 단건
+
 	}
 
-	// We can setup this env variable from the EB console
-	port := os.Getenv("PORT")
-
-	// Elastic Beanstalk forwards requests to port 8089
-	if port == "" {
-		port = "8089"
-	}
+	port := "8000"
 	server.Run(":" + port)
 
 }
 
-func happymain(ctx *gin.Context) {
-	// 회원 정보가 없으면
-
-	// 회원 정보가 존재하면
-	ctx.JSON(http.StatusOK, boxController.ActivateBox())
+func refresh(ctx *gin.Context) {
+	loginController.Refresh(ctx)
 }
 
+// 메인
+func happymain(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{"message": "Health check OK!"})
+}
+
+// ================================= 회원
 func userlogin(ctx *gin.Context) {
 	loginController.Login(ctx)
 }
 
+func userlogout(ctx *gin.Context) {
+	loginController.Logout(ctx)
+}
+
 func userjoin(ctx *gin.Context) {
 
-	err := userController.UserSave(ctx)
+	err := userController.UserJoin(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	} else {
@@ -97,6 +118,31 @@ func userjoin(ctx *gin.Context) {
 
 }
 
+func userOne(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, userController.FindByUserId(ctx))
+}
+
+func userModify(ctx *gin.Context) {
+	err := userController.UserUpdate(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"message": "User Update"})
+	}
+
+}
+
+func userWithDraw(ctx *gin.Context) {
+	err := userController.UserWithDraw(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"message": "User Delete"})
+	}
+
+}
+
+// ================================= 저금통
 func myboxlist(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, boxController.FindAll())
 }
@@ -112,6 +158,36 @@ func myboxsave(ctx *gin.Context) {
 	}
 }
 
+func myboxupdate(context *gin.Context) {
+	err := boxController.UpdateBox(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		context.JSON(http.StatusOK, gin.H{"message": "Box update! "})
+	}
+
+}
+
+func myboxdelete(context *gin.Context) {
+	err := boxController.DeleteBox(context)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		context.JSON(http.StatusOK, gin.H{"message": "Box Delete! "})
+	}
+
+}
+
+func nowbox(context *gin.Context) {
+	context.JSON(http.StatusOK, boxController.FindNotOpenedBox(context))
+}
+
+func myboxone(context *gin.Context) {
+	context.JSON(http.StatusOK, boxController.FindByIdBox(context))
+
+}
+
+// ================================= 일기
 func writediary(ctx *gin.Context) {
 	err := diaryController.DiarySave(ctx)
 	if err != nil {
@@ -119,7 +195,6 @@ func writediary(ctx *gin.Context) {
 	} else {
 		ctx.JSON(http.StatusOK, gin.H{"message": "Write Diary!"})
 	}
-
 }
 
 func mydiarylist(ctx *gin.Context) {
@@ -127,6 +202,28 @@ func mydiarylist(ctx *gin.Context) {
 }
 
 func mydiaryById(ctx *gin.Context) {
-	// id := ctx.Param("id")
+	ctx.JSON(http.StatusOK, diaryController.DiaryFindById(ctx))
+
+}
+
+func mydiaryupdate(ctx *gin.Context) {
+	err := diaryController.DiaryUpdate(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"message": "Diary update! "})
+	}
+
+}
+
+func countdiary(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, diaryController.DiaryCount(ctx))
+}
+
+func emojilist(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, diaryController.EmojiAll())
+}
+
+func emoji(ctx *gin.Context) {
 
 }

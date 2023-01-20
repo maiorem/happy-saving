@@ -1,27 +1,73 @@
 package service
 
-import "happy/entity"
+import (
+	"happy-save-api/dto"
+	"happy-save-api/entity"
+	"happy-save-api/repository"
+)
 
 type UserService interface {
-	// FindById(uuid string) entity.User
+	Join(user dto.CreateUserRequest) error
+	Update(user dto.UpdateUserRequest) error
+	Login(email string) error
+	FindById(id uint64) entity.User
 	FindAll() []entity.User
-	Save(user entity.User) entity.User
-	// Update(user entity.User) entity.User
+	WithDrawUser(userid uint64) error
 }
 
 type userService struct {
-	users []entity.User
+	repository repository.Repository
 }
 
-func UserNew() UserService {
-	return &userService{}
+func UserNew(userRepository repository.Repository) UserService {
+	return &userService{
+		repository: userRepository,
+	}
 }
 
-func (service *userService) Save(user entity.User) entity.User {
-	service.users = append(service.users, user)
-	return user
+func (service *userService) Join(user dto.CreateUserRequest) error {
+	service.repository.Join(user)
+	return nil
+}
+
+func EmailValidationCheck(email string) error {
+
+	return nil
+}
+
+func PasswordValidationCheck(password string) error {
+
+	return nil
+}
+
+func PasswordConfirm(firstPw string, secondPw string) error {
+
+	return nil
+}
+
+func (service *userService) Login(email string) error {
+	//TODO implement me
+	service.repository.Login(email)
+	return nil
+}
+
+func (service *userService) FindById(id uint64) entity.User {
+	//TODO implement me
+	return service.repository.FindById(id)
+}
+
+func (service *userService) Update(user dto.UpdateUserRequest) error {
+	//TODO implement me
+	service.repository.UpdateUser(user)
+	return nil
 }
 
 func (service *userService) FindAll() []entity.User {
-	return service.users
+	return service.repository.FindAllUser()
+}
+
+func (service *userService) WithDrawUser(userid uint64) error {
+	//TODO implement me
+	service.repository.DeleteUser(userid)
+	return nil
 }

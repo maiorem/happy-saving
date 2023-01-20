@@ -1,9 +1,9 @@
 package service
 
 import (
-	"happy/dto"
-	"happy/entity"
-	"happy/repository"
+	"happy-save-api/dto"
+	"happy-save-api/entity"
+	"happy-save-api/repository"
 )
 
 type BoxService interface {
@@ -11,7 +11,8 @@ type BoxService interface {
 	UpdateBox(dto.UpdateBoxRequest) error
 	DeleteBox(entity.SaveBox) error
 	FindAll() []entity.SaveBox
-	ActivateBox() entity.SaveBox
+	ActivateBox(uint64) entity.SaveBox
+	FindById(id uint64) entity.SaveBox
 }
 
 type boxService struct {
@@ -43,8 +44,15 @@ func (service *boxService) FindAll() []entity.SaveBox {
 	return service.repository.FindAllBox()
 }
 
-func (service *boxService) ActivateBox() entity.SaveBox {
-	var box = service.repository.ActivateBox()
-	box.IsOpened = entity.IsOpenedChange(box.OpenDate, box.IsOpened)
+// 메인페이지 (박스별 일기장 리스트)
+func (service *boxService) ActivateBox(userId uint64) entity.SaveBox {
+	var box = service.repository.ActivateBox(userId)
+	box.IsOpened = entity.IsOpenedChange(box.OpenBoxDate)
+	box.SaveDiaries = service.repository.FindAllDiaryByBoxId(box.ID)
 	return box
+}
+
+func (service *boxService) FindById(id uint64) entity.SaveBox {
+	//TODO implement me
+	return service.repository.FindHistoryBoxById(id)
 }

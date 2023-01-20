@@ -1,7 +1,7 @@
 package service
 
 import (
-	"happy/repository"
+	"happy-save-api/repository"
 )
 
 type LoginService interface {
@@ -18,8 +18,8 @@ func NewLoginService(happyRepository repository.Repository) LoginService {
 	}
 }
 
-func (service *loginService) Login(useremail string, password string) (uint64, bool) {
-	var user = service.repository.Login(useremail)
+func (service *loginService) Login(email string, password string) (uint64, bool) {
+	var user = service.repository.Login(email)
 	userid := user.ID
 	return userid, password == user.Password
 }

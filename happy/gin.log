@@ -2,6 +2,7 @@
  - using env:	export GIN_MODE=release
  - using code:	gin.SetMode(gin.ReleaseMode)
 
+<<<<<<< Updated upstream
 [GIN-debug] GET    /                         --> happy/server/api.happymain (4 handlers)
 [GIN-debug] POST   /login                    --> happy/server/api.userlogin (4 handlers)
 [GIN-debug] POST   /join                     --> happy/server/api.userjoin (4 handlers)
@@ -10,6 +11,18 @@
 [GIN-debug] POST   /api/writediary           --> happy/server/api.writediary (5 handlers)
 [GIN-debug] GET    /api/diaries              --> happy/server/api.mydiarylist (5 handlers)
 [GIN-debug] GET    /api/diaries/:id          --> happy/server/api.mydiaryById (5 handlers)
+=======
+[GIN-debug] GET    /                         --> happy-save-api/server/api.happymain (4 handlers)
+[GIN-debug] POST   /login                    --> happy-save-api/server/api.userlogin (4 handlers)
+[GIN-debug] POST   /join                     --> happy-save-api/server/api.userjoin (4 handlers)
+[GIN-debug] GET    /api/boxlist              --> happy-save-api/server/api.myboxlist (5 handlers)
+[GIN-debug] POST   /api/boxsave              --> happy-save-api/server/api.myboxsave (5 handlers)
+[GIN-debug] POST   /api/writediary           --> happy-save-api/server/api.writediary (5 handlers)
+[GIN-debug] GET    /api/diaries              --> happy-save-api/server/api.mydiarylist (5 handlers)
+[GIN-debug] GET    /api/diaries/:id          --> happy-save-api/server/api.mydiaryById (5 handlers)
+>>>>>>> Stashed changes
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
-[GIN-debug] Listening and serving HTTP on :8089
+[GIN-debug] Listening and serving HTTP on :8080
+::1 - [11 Nov 22 20:57 KST] GET / 200 12.5582ms
+::1 - [11 Nov 22 21:02 KST] GET / 200 1.0014ms
