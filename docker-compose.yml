@@ -1,0 +1,18 @@
+version: "3.0"
+services:
+  happy-save-api:
+    image: happy-save
+    build: .
+    container_name : "happy-save"
+    ports: 
+      - "5000:8080"
+    depends_on :configs:
+      - mysql
+  mysql :
+    image: mysql:latest
+    ports :
+      - "3306:3306"
+    environment:
+      TZ: Asia/Seoul
+    restart: always
+  
