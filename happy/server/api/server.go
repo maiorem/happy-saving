@@ -225,5 +225,5 @@ func emojilist(ctx *gin.Context) {
 }
 
 func emoji(ctx *gin.Context) {
-
+	ctx.JSON(http.StatusOK, diaryController.EmojiOne(ctx))
 }
