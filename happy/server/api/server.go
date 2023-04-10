@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+	"gopkg.in/gomail.v2"
 	"happy-save-api/controller"
 	"happy-save-api/middlewares"
 	"happy-save-api/repository"
@@ -47,6 +49,9 @@ func Start() {
 
 	server.GET("/", happymain) // main test
 
+	// 이메일 인증
+	server.POST("/verify-email", verifyEmail)
+
 	// health check
 	server.GET("/healthcheck", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"message": "Health check!"})
@@ -87,6 +92,30 @@ func Start() {
 	port := "8000"
 	server.Run(":" + port)
 
+}
+
+// 이메일 인증
+func verifyEmail(c *gin.Context) {
+	// 인증 링크를 보낼 사용자 이메일 주소
+	toEmail := c.Query("email")
+
+	// gomail 패키지를 사용하여 이메일 전송 설정
+	mail := gomail.NewMessage()
+	mail.SetHeader("To", toEmail)
+	mail.SetHeader("Subject", "이메일 인증을 완료해주세요.")
+	mail.SetBody("text/html", "<a href='http://localhost:8080/verified?email="+toEmail+"'>인증하기</a>")
+
+	// SMTP 서버 설정
+	d := gomail.NewDialer("smtp.gmail.com", 587, "username", "password")
+
+	// 이메일 전송
+	if err := d.DialAndSend(mail); err != nil {
+		fmt.Println("Error sending email:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "인증 링크가 전송되었습니다. 이메일을 확인해주세요."})
 }
 
 func refresh(ctx *gin.Context) {
