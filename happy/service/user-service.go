@@ -13,6 +13,7 @@ type UserService interface {
 	FindById(id uint64) entity.User
 	FindAll() []entity.User
 	WithDrawUser(userid uint64) error
+	CreateName(userid uint64, name dto.CreateNameRequest) error
 }
 
 type userService struct {
@@ -39,7 +40,11 @@ func PasswordValidationCheck(password string) error {
 
 	return nil
 }
-
+func (service *userService) CreateName(userid uint64, name dto.CreateNameRequest) error {
+	//TODO implement me
+	service.repository.CreateName(userid, name)
+	return nil
+}
 func PasswordConfirm(firstPw string, secondPw string) error {
 
 	return nil
