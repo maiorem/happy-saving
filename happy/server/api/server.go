@@ -67,6 +67,7 @@ func Start() {
 		apiRoutes.POST("/refresh", refresh) // 토큰 리프레시
 
 		apiRoutes.POST("/logout", userlogout)    // 로그아웃
+		apiRoutes.POST("/name", createName)      // 이름 생성
 		apiRoutes.GET("/user", userOne)          // 내 정보 보기
 		apiRoutes.PUT("/user", userModify)       // 이름, 비밀번호 수정
 		apiRoutes.PUT("/withdraw", userWithDraw) // 회원 탈퇴 (회원 계정 비활성화)
@@ -102,11 +103,11 @@ func verifyEmail(c *gin.Context) {
 	// gomail 패키지를 사용하여 이메일 전송 설정
 	mail := gomail.NewMessage()
 	mail.SetHeader("To", toEmail)
-	mail.SetHeader("Subject", "이메일 인증을 완료해주세요.")
+	mail.SetHeader("Subject", "임시 비밀번호가 발급되었습니다.")
 	mail.SetBody("text/html", "<a href='http://localhost:8080/verified?email="+toEmail+"'>인증하기</a>")
 
 	// SMTP 서버 설정
-	d := gomail.NewDialer("smtp.gmail.com", 587, "username", "password")
+	d := gomail.NewDialer("smtp.gmail.com", 587, "maiorem00", "Mireena0510!")
 
 	// 이메일 전송
 	if err := d.DialAndSend(mail); err != nil {
@@ -115,7 +116,7 @@ func verifyEmail(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "인증 링크가 전송되었습니다. 이메일을 확인해주세요."})
+	c.JSON(http.StatusOK, gin.H{"message": "임시 비밀번호가 발급되었습니다. 이메일을 확인해주세요."})
 }
 
 func refresh(ctx *gin.Context) {
@@ -143,6 +144,17 @@ func userjoin(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	} else {
 		ctx.JSON(http.StatusOK, gin.H{"message": "New Member join!"})
+	}
+
+}
+
+func createName(ctx *gin.Context) {
+
+	err := userController.UserCreateName(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		ctx.JSON(http.StatusOK, gin.H{"message": "New Name Create!"})
 	}
 
 }
