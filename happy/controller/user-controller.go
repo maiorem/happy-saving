@@ -17,6 +17,7 @@ type SaveUserController interface {
 	FindByUserId(ctx *gin.Context) entity.User
 	UserWithDraw(ctx *gin.Context) error
 	UserUpdate(ctx *gin.Context) error
+	UserCreateName(ctx *gin.Context) error
 }
 
 type userController struct {
@@ -66,6 +67,27 @@ func (c userController) UserJoin(ctx *gin.Context) error {
 	}
 
 	c.service.Join(user)
+	return nil
+}
+
+func (c userController) UserCreateName(ctx *gin.Context) error {
+	//TODO implement me
+	var name dto.CreateNameRequest
+	err := ctx.ShouldBindJSON(&name)
+	if err != nil {
+		ctx.JSON(http.StatusUnprocessableEntity, "invalid json")
+		return err
+	}
+	metadata, err := service.NewJWTService().ExtractTokenMetadata(ctx.Request)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, err.Error())
+	}
+
+	userid, err := service.NewJWTService().FetchAuth(metadata)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, err.Error())
+	}
+	c.service.CreateName(userid, name)
 	return nil
 }
 
