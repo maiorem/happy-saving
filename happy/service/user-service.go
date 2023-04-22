@@ -14,6 +14,7 @@ type UserService interface {
 	FindAll() []entity.User
 	WithDrawUser(userid uint64) error
 	CreateName(userid uint64, name dto.CreateNameRequest) error
+	CreateTempPw(toEmail string) string
 }
 
 type userService struct {
@@ -31,15 +32,11 @@ func (service *userService) Join(user dto.CreateUserRequest) error {
 	return nil
 }
 
-func EmailValidationCheck(email string) error {
-
-	return nil
+func (service *userService) CreateTempPw(toEmail string) string {
+	tempPassword := service.repository.ChangeTempPassword(toEmail)
+	return tempPassword
 }
 
-func PasswordValidationCheck(password string) error {
-
-	return nil
-}
 func (service *userService) CreateName(userid uint64, name dto.CreateNameRequest) error {
 	//TODO implement me
 	service.repository.CreateName(userid, name)
