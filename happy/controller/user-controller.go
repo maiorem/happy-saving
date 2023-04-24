@@ -18,7 +18,7 @@ type SaveUserController interface {
 	UserWithDraw(ctx *gin.Context) error
 	UserUpdate(ctx *gin.Context) error
 	UserCreateName(ctx *gin.Context) error
-	CreateTempPassword(toEmail string) string
+	CreateTempPassword(toEmail string) (string, error)
 }
 
 type userController struct {
@@ -35,11 +35,14 @@ func UserNew(service service.UserService) SaveUserController {
 	}
 }
 
-func (c userController) CreateTempPassword(toEmail string) string {
+func (c userController) CreateTempPassword(toEmail string) (string, error) {
 
-	tempPw := c.service.CreateTempPw(toEmail)
+	tempPw, err := c.service.CreateTempPw(toEmail)
+	if err != nil {
+		return "", err
+	}
 
-	return tempPw
+	return tempPw, nil
 }
 
 func (c userController) UserFindAll() []entity.User {
